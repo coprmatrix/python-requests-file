@@ -1,0 +1,56 @@
+<services>
+    <service name="obs_scm">
+        <param name='filename'>requests_file</param>
+        <param name="url">https://github.com/huakim/python-requests-file</param>
+        <param name="scm">git</param>
+        <param name="revision">main</param>
+        <param name="changesgenerate">enable</param>
+        <param name="without-version">enable</param>
+        <param name="versionformat">@PARENT_TAG@</param>
+    </service>
+    <service name="perl_regex" mode="buildtime">
+        <param name="file">requests_file.obsinfo</param>
+        <param name="outfile">main.reg</param>
+        <param name="regex">
+if (index($_, "version") == -1) {
+    $_ = "";
+} else {
+    s/[^0-9\.]//g;
+    $_ = "s/dynamic.*=.*/version = \"$_\"/g";
+}
+	</param>
+    </service>
+    <service name="perl_regex" mode="buildtime">
+        <param name="file">requests_file/pyproject.toml</param>
+        <param name="regexfile">main.reg</param>
+        <param name="regex">
+s/requires.*=.*/requires = ["hatchling"]/g;
+s/build-backend.*=.*/build-backend = "hatchling.build"/g;
+        </param>
+        <param name="outfile">proj.toml</param>
+    </service>
+    <service name="run" mode="buildtime">
+        <param name="command">cp proj.toml requests_file/pyproject.toml</param>
+    </service>
+    <service name="py_build" mode="buildtime">      
+        <param name="source">requests_file</param>
+    </service>
+    <service name="extract_file" mode="buildtime">
+        <param name="archive">requests_file-*.tar.gz</param>
+        <param name="file">requests_file-*/PKG-INFO</param>
+    </service>
+    <service name="py2pack_generate" mode="buildtime">
+        <param name="name">requests-file</param>
+	<param name="localfile">PKG-INFO</param>
+    </service>
+    <service name="perl_regex" mode="buildtime">
+        <param name="file">*.spec</param>
+        <param name="regex">
+          s/.*CHOOSE:.*/%pyunittest discover -v tests/g;
+          s/(%{python_sitelib}\/requests)-file/\1_file/g;
+          s/(%autosetup -p1 -n requests)-file/\1_file/g;
+          s/(%{python_sitelib}\/requests_file)\n/\1.py\n%pycache_only %{python_sitelib}\/__pycache__\/requests_file.*.py*
+\n%license LICENSE\n%doc README.rst\n/g;
+        </param> 
+    </service>
+</services>
